@@ -16,8 +16,8 @@ def buildClassifiers(data_set_name, sep = " :&: ", tweet_pos = 1, target_pos=2):
     """This function defines the classifier and then performs training and evaluation on it"""
     
 
-    #reading the data set for extracting training and testing set
-    X_train, X_test, y_train, y_test = process_raw_dataset(data_set_name) 
+    #reading the data set for extracting processed data and targets
+    data, targets = process_raw_dataset(data_set_name) 
        
     #Classifier 1 - Multinomial Naive Bayes
     clf1 = Pipeline([
@@ -25,7 +25,7 @@ def buildClassifiers(data_set_name, sep = " :&: ", tweet_pos = 1, target_pos=2):
         ('nb', MultinomialNB())
         ])
     
-    train_and_evaluate(clf1, X_train, X_test, y_train, y_test)
+    train_and_evaluate(clf1, data,targets)
     
 
 def main():

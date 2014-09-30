@@ -13,8 +13,8 @@ import pylab as pl
 
 
 def evaluate_cross_validation(clf, X, y, K):
-    """Function that takes a classifier and perform the K-fold cross-validation over
-    the specified x an y values"""    
+    """Function that takes a classifier and perform the K-fold cross-validation (CV) over
+    the specified x and y array as well as the specified K value. The metrics used for CV are precision, recall and F1"""    
     
     # initializing the vectors for storing the scores obtained for each fold
     k_train_precision = np.zeros(K)
@@ -30,27 +30,38 @@ def evaluate_cross_validation(clf, X, y, K):
         
     # create KFold cross validation
     cv = KFold(n_samples, K, shuffle=True, random_state=0)
-        
+    
+    #Tuple for keeping the Best F1-based classifier got from the K partitions
+    best_clf = (clf, 0.0) 
+    
+    print '[+] Training the classifier on multiple partitions...'
+            
     #----- ITERATE OVER THE K folds -----#
     # NOTE: by scikit-learn default, the method 'cross_val_score(clf, X, y, cv=k_fold)' returns values from the 
     #       'score method' of the estimator (clf), which in case of MultinomialNB is the accuracy. Since we are interested
     #       in other metrics, we call metric functions 'manually' by iterating over the K-fold partitions defined by cv.
-    for j, (train, test) in enumerate(cv):
+    for j, (train_indexes, test_indexes) in enumerate(cv):
         # fitting the classifier in the corresponding fold for obtaining the corresponding 
-        # score measurements on train and test sets
-        clf.fit([X[k] for k in train], y[train])
+        # score measurements on train_indexes and test_indexes sets
+        clf.fit([X[k] for k in train_indexes], y[train_indexes])
         
         #----- USING PRECISION, RECALL AND F1 AS MEASUREMENTS OF PERFORMANCE (for training set) -----#
-        y_train_pred = clf.predict([X[k] for k in train]) #getting predicted results for computing scores
-        k_train_precision[j] = metrics.precision_score(y[train], y_train_pred, pos_label='pos')
-        k_train_recall[j] = metrics.recall_score(y[train], y_train_pred, pos_label='pos')
-        k_train_f1[j] = metrics.f1_score(y[train], y_train_pred, pos_label='pos')
+        train_data = [X[k] for k in train_indexes]
+        y_train_pred = clf.predict(train_data) #getting predicted results for computing scores
+        k_train_precision[j] = metrics.precision_score(y[train_indexes], y_train_pred, pos_label='pos')
+        k_train_recall[j] = metrics.recall_score(y[train_indexes], y_train_pred, pos_label='pos')
+        k_train_f1[j] = metrics.f1_score(y[train_indexes], y_train_pred, pos_label='pos')
         
-        #----- USING PRECISION, RECALL AND F1 AS MEASUREMENTS OF PERFORMANCE (for testing set) -----#    
-        y_test_pred = clf.predict([X[k] for k in test]) #getting predicted results for computing scores
-        k_test_precision[j] = metrics.precision_score(y[test],y_test_pred, pos_label='pos')
-        k_test_recall[j] = metrics.recall_score(y[test],y_test_pred, pos_label='pos')
-        k_test_f1[j] = metrics.f1_score(y[test],y_test_pred, pos_label='pos')
+        #----- USING PRECISION, RECALL AND F1 AS MEASUREMENTS OF PERFORMANCE (for testing set) -----# 
+        y_test = [X[k] for k in test_indexes] #reassemble the test_indexes set given the indexes returned via enumerate(cv) in 'test_indexes' variable
+        y_test_pred = clf.predict(y_test) #getting predicted results for computing scores
+        k_test_precision[j] = metrics.precision_score(y[test_indexes],y_test_pred, pos_label='pos')
+        k_test_recall[j] = metrics.recall_score(y[test_indexes],y_test_pred, pos_label='pos')
+        k_test_f1[j] = metrics.f1_score(y[test_indexes],y_test_pred, pos_label='pos')
+        
+        #refreshing the best F1-based classifier (Final model)
+        if (best_clf[1] < k_test_f1[j]):
+            best_clf = (clf,k_test_f1[j],y[test_indexes],y_test_pred)
         
             
     #----- Storing the mean of the K fold scores (for Testing set) -----#
@@ -67,7 +78,7 @@ def evaluate_cross_validation(clf, X, y, K):
     test_f1_sem = sem(k_test_f1)
     
     #-----printing results ---#
-    print "### RESULTS FOR THE " + str(K)+"-FOLD CROSS-VALIDATION TEST ###"
+    print "\n\n### RESULTS FOR THE " + str(K)+"-FOLD CROSS-VALIDATION TEST ###"
     
     print '----- TRAINING SCORES -----'
     #creating a table header for visualization purposes
@@ -92,33 +103,26 @@ def evaluate_cross_validation(clf, X, y, K):
     #printing the table in the console
     print tabulate(table,header, numalign="right",floatfmt=".3f")
     
-    print #just a blank line space :)
+    #returns the classifier who achieved the best F1 measure as well as the training and testing partition
+    return best_clf
     
 ###End of the function###
 
-def train_and_evaluate(clf, X_train, X_test, y_train, y_test):
-    """Function that train the classifier (model) in the entire training set and evaluate the accuracy
+def train_and_evaluate(clf, data, targets):
+    """Function that train the classifier (model represented by clf parameter) in the entire training set and evaluate the accuracy
         in the training and in the testing sets. It will also print a classification report
         (precision and recall on every class) and the corresponding confusion matrix."""
 
-#     print '[+] Training the classifier...'
-#     #training the classifier (clf)
-#     clf.fit(X_train, y_train)
-#     
-    print '[+] Performing Cross-validation...'
-    #performing 10-Fold cross-validation (only on training set)
-    evaluate_cross_validation(clf,X_train,np.array(y_train),10)
+   
+    print '[+] Using the classifier setup for performing Cross-validation...'
+    #performing 10-Fold cross-validation and getting the best F1-based classifier considering all partitions
+    best_clf_info = evaluate_cross_validation(clf,data,np.array(targets),10)
     
-    print '[+] Accuracy on training set:{:^55}'.format("{0:.3f}".format(clf.score(X_train, y_train)))
-    print '[+] Accuracy on testing set:{:^57}'.format("{0:.3f}".format(clf.score(X_test, y_test)))
-    
-    #testing the classifier on new data for getting final F1 measure (on testing set)
-    y_pred = clf.predict(X_test)
-    #printing F1 measure
-    print "[+] F1-measure: " + str(metrics.f1_score(y_test, y_pred, average=None))
+    y_test = best_clf_info[2] #retrieving y_test data set from best_clf_info
+    y_pred = best_clf_info[3] #retrieving y_pred (predicted test data target by the classifier) from best_clf_info
 
     #printing sklearn classification report
-    print "[+] Classification report on test set:"
+    print "\n[+] Exclusive classification report for the best classifier..."
     print metrics.classification_report(y_test, y_pred)
 
     #computing confusion matrix

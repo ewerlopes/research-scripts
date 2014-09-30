@@ -30,10 +30,10 @@ def process_raw_dataset(data_set_name, sep = " :&: ", tweet_pos = 1, target_pos=
         if os.path.isfile('../master.data/pp_'+data_set_name):
             print "[+] A preprocessed version of the file already exists in the directory..."
             #retrieving preprocessed cache in ../master.data/ directory
-            data_set_lines = retrievingPreproCache(data_set_name,len(data_set_lines),sep, tweet_pos)
+            data_set_lines = RetrievingCache(data_set_name,len(data_set_lines),sep, tweet_pos)
         else:
             print "[+] No previous preprocessed version of the data set!"
-            data_set_lines = preproDataset(data_set_name, data_set_lines, sep, tweet_pos) #initializing preprocessing steps on the entire data set. 
+            data_set_lines = PreprocData(data_set_name, data_set_lines, sep, tweet_pos) #initializing preprocessing steps on the entire data set. 
 
     except Exception, e:
         print "[*] File-in error: Error in reading the data set! "
@@ -50,11 +50,11 @@ def process_raw_dataset(data_set_name, sep = " :&: ", tweet_pos = 1, target_pos=
         data.append(datapoint[tweet_pos]) #using tweet_pos to get only the tweet data
         targets.append(datapoint[target_pos].rstrip('\n')) #getting the target variable of the data line
 
-    #using train_test_split(data, target, SPLIT_PERC) for getting the training and testing sets.
-    return train_test_split(data,targets)
+    #returning da data and targets
+    return data, targets
 #End of the function
 
-def preproDataset(data_set_name, data_set_lines, sep, tweet_pos):
+def PreprocData(data_set_name, data_set_lines, sep, tweet_pos):
     """This function preprocesses the data set and makes a cache copy (by adding pp_prefix) of it 
     in master.data directory"""
     
@@ -108,7 +108,7 @@ def preproDataset(data_set_name, data_set_lines, sep, tweet_pos):
     return proc_dataset #returns the preprocess data set as a list of string (each tweet per line)
 #end of the function
 
-def retrievingPreproCache(data_set_name,dataset_length,sep,tweet_pos):
+def RetrievingCache(data_set_name,dataset_length,sep,tweet_pos):
     """This function retrieves the cache of an already preprocessed data set based on the match between its original name and
     the existence of a file with 'pp_' + 'data_set_file_name' in the master.data directory. This process is intended to avoid
     unnecessary computational resources usage since preprocessing a large data set is an expensive task."""
@@ -146,7 +146,7 @@ def retrievingPreproCache(data_set_name,dataset_length,sep,tweet_pos):
                 sys.exit()
             
             print '[+] Making a new cache from the original data set...'
-            return preproDataset(data_set_name, open('../master.data/'+ data_set_name).readlines(),sep,tweet_pos) #making a new preprocessed cache.
+            return PreprocData(data_set_name, open('../master.data/'+ data_set_name).readlines(),sep,tweet_pos) #making a new preprocessed cache.
     
     except Exception, e:
         print '[*] Error on getting preprocessed cache file!'
