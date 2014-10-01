@@ -7,10 +7,10 @@ def oauth_login():
     # See https://dev.twitter.com/docs/auth/oauth for more information 
     # on Twitter's OAuth implementation.
     
-    CONSUMER_KEY = 'BNGr3aRGClN2MA1AKPdxiQ'
-    CONSUMER_SECRET = 'OS0at5eT5hBU47JcVcV4kQflvZR1ldcwd2ryqjZutE'
-    OAUTH_TOKEN = '40455807-5dPLQR2IhaM8x9aVGvW5mNdaBV3rFXSAjADacawwc'
-    OAUTH_TOKEN_SECRET = 'ym8RPwi7kGgTN536kUrPYuKiphX3CzMBV0sZeaTOI'
+    CONSUMER_KEY = 'enter the key'
+    CONSUMER_SECRET = 'enter the key'
+    OAUTH_TOKEN = 'enter the key'
+    OAUTH_TOKEN_SECRET = 'enter the key'
     
     auth = twitter.oauth.OAuth(OAUTH_TOKEN, OAUTH_TOKEN_SECRET,
                                CONSUMER_KEY, CONSUMER_SECRET)
